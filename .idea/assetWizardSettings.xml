@@ -100,7 +100,7 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
-                                                <entry key="imagePath" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\media\logo-app.png" />
+                                                <entry key="imagePath" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\iosv17\media\logo-app.png" />
                                                 <entry key="scalingPercent" value="66" />
                                               </map>
                                             </option>
@@ -163,7 +163,7 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
-                                                <entry key="imagePath" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\media\logo-app.png" />
+                                                <entry key="imagePath" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\iosv17\media\logo-app.png" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -197,7 +197,7 @@
                                     <map>
                                       <entry key="assetType" value="IMAGE" />
                                       <entry key="iconShape" value="CIRCLE" />
-                                      <entry key="imageAsset" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\media\logo-app.png" />
+                                      <entry key="imageAsset" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\iosv17\media\logo-app.png" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -226,7 +226,7 @@
                                             <option name="values">
                                               <map>
                                                 <entry key="color" value="000000" />
-                                                <entry key="imagePath" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\media\logo-app.png" />
+                                                <entry key="imagePath" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\iosv17\media\logo-app.png" />
                                                 <entry key="paddingPercent" value="-10" />
                                               </map>
                                             </option>
@@ -260,7 +260,7 @@
                                   <option name="values">
                                     <map>
                                       <entry key="assetType" value="IMAGE" />
-                                      <entry key="imageAsset" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\media\logo-app.png" />
+                                      <entry key="imageAsset" value="C:\Users\admin\Documents\Downloads\ids.ezs.vn\iosv17\media\logo-app.png" />
                                     </map>
                                   </option>
                                 </PersistentState>
