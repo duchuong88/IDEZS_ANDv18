@@ -36,7 +36,10 @@ import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
+import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -90,7 +93,7 @@ Thay đổi cấu hình cho từng app
 bao gồm:
 - màu thương hiệu /res/color.xml
 - Tên domain thương hiệu /res/string.xml
-- Firebase notifiction /assets/google-service.json
+- Firebase notifiction /packages/google-service.json
 */
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
 
@@ -427,135 +430,133 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        //go
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        // ==========================
+        // Location Client
+        // ==========================
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        // ==========================
+        // Full screen + status/nav bar đè lên view
+        // ==========================
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-//        getWindow().setStatusBarColor(ContextCompat.getColor(this, android.R.color.transparent));
-
-        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
 
-        if (!isTaskRoot() && (getIntent().hasCategory(Intent.CATEGORY_LAUNCHER) || getIntent().hasCategory(Intent.CATEGORY_INFO))
+        // ==========================
+        // Tránh chạy lại activity khi launch lại
+        // ==========================
+        if (!isTaskRoot() && (getIntent().hasCategory(Intent.CATEGORY_LAUNCHER)
+                || getIntent().hasCategory(Intent.CATEGORY_INFO))
                 && Intent.ACTION_MAIN.equals(getIntent().getAction())) {
             finish();
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= 23 && (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)) {
-            // Ẩn để gọi động
-            //  ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, 1);
+        // ==========================
+        // Quyền
+        // ==========================
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    || ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: request permissions nếu cần
+            }
         }
 
+        // ==========================
+        // Lấy FCM Token
+        // ==========================
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+                return;
+            }
+            String token = task.getResult();
+            SharedPreferences sharedPref = getSharedPreferences(getPackageName(), Context.MODE_PRIVATE);
+            sharedPref.edit().putString("FirebaseNotiToken", token).apply();
+        });
 
-        // Get Token Key
-        FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(new OnCompleteListener<String>() {
-                    @Override
-                    public void onComplete(@NonNull Task<String> task) {
-                        if (!task.isSuccessful()) {
-                            Log.w(TAG, "Fetching FCM registration token failed", task.getException());
-                            return;
-                        }
+        // ==========================
+        // WebView setup
+        // ==========================
+        wv = findViewById(R.id.wv);
 
-                        // Get new FCM registration token
-                        String token = task.getResult();
-                        String name = getPackageName();
-                        SharedPreferences sharedPref = getSharedPreferences(name, Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sharedPref.edit();
-                        editor.putString("FirebaseNotiToken", token);
-                        editor.commit();
-                    }
-                });
+        // ==========================
+        // Clear localStorage chỉ lần đầu mở app
+        // ==========================
+        SharedPreferences sp = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        boolean firstRun = sp.getBoolean("first_run_clear_localstorage", true);
 
-        //load
+        if (firstRun) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                WebStorage.getInstance().deleteAllData();
+            } else {
+                deleteDatabase("webview.db");
+                deleteDatabase("webviewCache.db");
+            }
+            sp.edit().putBoolean("first_run_clear_localstorage", false).apply();
+        }
 
-        wv = (WebView) this.findViewById(R.id.wv);
         ANDROID = new ANDROID(this);
         wv.setBackgroundColor(Color.TRANSPARENT);
-        //Luôn để mầu trắng
-        //setBackground(null);
-
         wv.addJavascriptInterface(ANDROID, "ANDROID");
 
         WebSettings setting = wv.getSettings();
-        //enable all
-
-        setting.setAllowContentAccess(true);
-        setting.setAllowFileAccess(true);
-
-        setting.setAllowUniversalAccessFromFileURLs(true);
-        //setting.setBlockNetworkImage(true);
-        //setting.setBlockNetworkLoads(true);
-
-        setting.setDatabaseEnabled(true);
-        setting.setDisplayZoomControls(true);
-
-
-        setting.setDomStorageEnabled(true);
-        setting.setJavaScriptCanOpenWindowsAutomatically(true);
         setting.setJavaScriptEnabled(true);
-        setting.setLightTouchEnabled(true);
+        setting.setDomStorageEnabled(true);
         setting.setLoadWithOverviewMode(true);
+        setting.setUseWideViewPort(true);
         setting.setLoadsImagesAutomatically(true);
         setting.setMediaPlaybackRequiresUserGesture(true);
-        //setting.setSafeBrowsingEnabled(true);
+        setting.setJavaScriptCanOpenWindowsAutomatically(true);
+        setting.setAllowContentAccess(true);
+        setting.setAllowFileAccess(true);
+        setting.setAllowUniversalAccessFromFileURLs(true);
+        setting.setAllowFileAccessFromFileURLs(true);
+        setting.setDatabaseEnabled(true);
+        setting.setBuiltInZoomControls(false);
+        setting.setDisplayZoomControls(false);
         setting.setSaveFormData(true);
         setting.setSavePassword(true);
-
-        setting.setAllowFileAccessFromFileURLs(true);
-        //setting.setAppCacheEnabled(true);
-        //setting.setBlockNetworkLoads(true);
-        //setting.setBlockNetworkLoads(true);
-        // setting.setBlockNetworkImage(true);
-        setting.setDisplayZoomControls(false);
-        setting.setUseWideViewPort(true);
-        setting.setBuiltInZoomControls(false);
-        // setting.setBlockNetworkImage(true);
-
-        setting.setCacheMode(WebSettings.LOAD_DEFAULT);
         setting.setSupportMultipleWindows(false);
+        setting.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        if (Build.VERSION.SDK_INT >= 21) {
-            //WebSettings.setMixedContentMode(0);
+        if (Build.VERSION.SDK_INT >= 19) {
             wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        } else if (Build.VERSION.SDK_INT >= 19) {
-            wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        } else if (Build.VERSION.SDK_INT < 19) {
+        } else {
             wv.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
 
-        //Mỗi một app có 1 domain riêng
-
+        // ==========================
+        // Load HTML
+        // ==========================
         String domain = getString(R.string.app_domain);
-        @SuppressLint("ResourceType")
-        String color = getString(R.color.colorPrimary);
-        String html = "";
-
-        html = getAssetString("embed21.html");
+        String html = getAssetString("embed21.html");
 
         initWebView();
 
         Bundle extras = savedInstanceState != null ? savedInstanceState : getIntent().getExtras();
         Gson gson = new Gson();
-
         String jsonExtras = extras == null ? "{}" : gson.toJson(mapBundle(extras));
-        html = html.replace("<body>", "<body><script> var ANDROID_EXTRAS =" + jsonExtras + "; document.documentElement.style.setProperty('--f7-safe-area-top', '" + getStatusBarHeight() + "px'); document.documentElement.style.setProperty('--f7-safe-area-bottom', '" + getNavigationBarHeight() + "px')</script>");
 
-        //2024/09/07
-        try{
+        html = html.replace("<body>", "<body>" +
+                "<script>" +
+                "var ANDROID_EXTRAS = " + jsonExtras + ";" +
+                "document.documentElement.style.setProperty('--f7-safe-area-top','" + getStatusBarHeight() + "px');" +
+                "document.documentElement.style.setProperty('--f7-safe-area-bottom','" + getNavigationBarHeight() + "px');" +
+                "</script>");
+
+        try {
             String ss = app21.START_SCRIPT(null);
-            html = html + "<script>"  + ss + "</script>";
-        }catch (IOException e){}
-
+            html += "<script>" + ss + "</script>";
+        } catch (IOException e) {
+            Log.e(TAG, "START_SCRIPT error", e);
+        }
 
         //DEV Remove
-        wv.loadDataWithBaseURL(domain, html + "", "text/html", "utf-8", "");
+        wv.loadDataWithBaseURL(domain, html, "text/html", "utf-8", "");
         //DEV Remove
 
         //DEV Open
@@ -566,29 +567,92 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
         //DEV Open
 
+        // ==========================
+        // Keyboard handling (scroll input)
+        // ==========================
+        View rootView = getWindow().getDecorView();
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            View rootView = getWindow().getDecorView();
-            rootView.setOnApplyWindowInsetsListener((view, windowInsets) -> {
-                boolean isKeyboardVisible = windowInsets.isVisible(WindowInsets.Type.ime());
-                int keyboardHeight = windowInsets.getInsets(WindowInsets.Type.ime()).bottom;
-                if(isKeyboardVisible) {
-                    wv.evaluateJavascript("javascript:document.documentElement.style.setProperty('--f7-keyboard-height', '"+ dpToPx(keyboardHeight) +"px');", null);
+            rootView.setOnApplyWindowInsetsListener((view, insets) -> {
+                int statusBar = insets.getInsets(WindowInsets.Type.statusBars()).top;
+                int imeHeight = insets.getInsets(WindowInsets.Type.ime()).bottom;
+                boolean isKeyboardVisible = imeHeight > 0;
+
+                // Chỉ padding top để tránh status bar
+                wv.setPadding(0, statusBar, 0, 0);
+
+                // Cập nhật CSS biến keyboard height
+                String js = "if(document && document.documentElement) {" +
+                        "document.documentElement.style.setProperty('--f7-keyboard-height','" + dpToPx(imeHeight) + "px');" +
+                        "}";
+                wv.evaluateJavascript(js, null);
+
+
+                // Scroll input focus nếu bàn phím hiện
+                if (isKeyboardVisible) {
+//                    // Bàn phím show
                 }
-                return windowInsets;
+                return insets;
+            });
+            rootView.requestApplyInsets();
+        } else {
+            // Android < R
+            rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                private int lastHeight = 0;
+
+                @Override
+                public void onGlobalLayout() {
+                    Rect r = new Rect();
+                    rootView.getWindowVisibleDisplayFrame(r);
+                    int visibleHeight = r.height();
+                    int screenHeight = rootView.getRootView().getHeight();
+                    int keyboardHeight = screenHeight - visibleHeight;
+
+                    if (lastHeight == keyboardHeight) return;
+                    lastHeight = keyboardHeight;
+
+                    boolean isKeyboardVisible = keyboardHeight > screenHeight * 0.15;
+
+                    // Chỉ padding top để tránh status bar
+                    int statusBar = getStatusBarHeight();
+                    wv.setPadding(0, statusBar, 0, 0);
+
+                    // CSS keyboard height
+                    String js = "if(document && document.documentElement) {" +
+                            "document.documentElement.style.setProperty('--f7-keyboard-height','" + dpToPx(keyboardHeight) + "px');" +
+                            "}";
+                    wv.evaluateJavascript(js, null);
+
+                    if (isKeyboardVisible) {
+                        // Bàn phím show
+                    }
+                }
             });
         }
 
+        // ==========================
+        // Notification permission
+        // ==========================
         getNotificationPermission();
     }
 
-    public void getNotificationPermission(){
+    public void getNotificationPermission() {
         try {
-            if (Build.VERSION.SDK_INT > 32) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        202);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED) {
+
+                    ActivityCompat.requestPermissions(
+                            this,
+                            new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                            202
+                    );
+                }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
+            Log.e("Permission", "Error requesting notification permission", e);
         }
     }
 
@@ -815,20 +879,39 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     private void initWebView() {
-        // Dev Hidden
-        //wv.setWebViewClient(new Callback());
-        // Dev Hidden
-
-        // Dev Open
         wv.setWebViewClient(new WebViewClient() {
 
+            @Override
             public void onPageFinished(WebView view, String url) {
-                wv.evaluateJavascript("javascript:document.documentElement.style.setProperty('--f7-safe-area-top', '"+ getStatusBarHeight() +"px');", null);
-                wv.evaluateJavascript("javascript:document.documentElement.style.setProperty('--f7-safe-area-bottom', '"+ getNavigationBarHeight() +"px');", null);
+                // Khi trang load xong thì inject lại safe-area
+                wv.evaluateJavascript(
+                        "javascript:document.documentElement.style.setProperty('--f7-safe-area-top','" + getStatusBarHeight() + "px');",
+                        null
+                );
+                wv.evaluateJavascript(
+                        "javascript:document.documentElement.style.setProperty('--f7-safe-area-bottom','" + getNavigationBarHeight() + "px');",
+                        null
+                );
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                Log.d("WebView", "Intercept: " + url);
+
+                // Nếu web gọi https://ids.ezs.vn/AppCoreV2/assets/js/vendor.js thì bẻ sang file trong packages
+                if (url.endsWith("/vendor.js")) {
+                    try {
+                        InputStream is = getAssets().open("packages/js/vendor.js");
+                        return new WebResourceResponse("application/javascript", "UTF-8", is);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                return super.shouldInterceptRequest(view, request);
             }
         });
-
-        // Dev Open
 
         wv.setWebChromeClient(new WebChromeClient() {
 

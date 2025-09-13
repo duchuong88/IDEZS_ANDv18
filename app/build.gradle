@@ -8,9 +8,10 @@ android {
         applicationId "vn.idezs"
         minSdkVersion 23
         targetSdkVersion 35
-        versionCode 8
-        versionName "1.7"
+        versionCode 12
+        versionName "2.1"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        ndkVersion = "29.0.14033849"
     }
     buildTypes {
         release {
@@ -30,11 +31,10 @@ android {
     productFlavors {
         prod {
             applicationId "vn.idezs"
-            versionCode 8
-            versionName "1.7"
+            versionCode 12
+            versionName "2.1"
         }
     }
-
 }
 
 repositories {

@@ -171,8 +171,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     public void sendNotification(Map<String, String> data) {
 
         // cái này là lấy nội dung từ trên server trả về
-        String content = data.get("body").toString();
-        String title = data.get("title").toString();
+        String content = data.containsKey("body") ? data.get("body") : "";
+        String title = data.containsKey("title") ? data.get("title") : "";
 
         Bitmap icon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 
@@ -258,7 +258,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         //8
         String sound = data.containsKey("sound") ? data.get("sound") : null;
         Uri _sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        if (sound != null && !"".equals(sound) && sound != "TYPE_NOTIFICATION") {
+        if (sound != null && !"".equals(sound) && !"TYPE_NOTIFICATION".equals(sound)) {
             _sound = Uri.parse(sound);
         }
 

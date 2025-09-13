@@ -45,6 +45,7 @@ import android.webkit.WebStorage;
 import android.widget.Toast;
 
 import com.google.firebase.encoders.json.BuildConfig;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.permissionx.guolindev.PermissionX;
 import com.permissionx.guolindev.callback.RequestCallback;
@@ -332,6 +333,26 @@ public class App21 {
         NotificationManager nMgr = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         nMgr.cancelAll();
     }
+
+    void CLEAR_FCM_TOKEN(final Result result) {
+        FirebaseMessaging.getInstance().deleteToken()
+                .addOnCompleteListener(task -> {
+                    Result rs = result.copy();
+                    if (task.isSuccessful()) {
+                        // Xóa token trong SharedPreferences nếu có lưu
+                        SharedPreferences sp = mContext.getSharedPreferences(mContext.getPackageName(), Context.MODE_PRIVATE);
+                        sp.edit().remove("FirebaseNotiToken").apply();
+
+                        rs.success = true;
+                    } else {
+                        rs.success = false;
+                        rs.data = "Không thể xóa FCM token: " + task.getException();
+                    }
+
+                    App21Result(rs);
+                });
+    }
+
 
     void GET_LOCATION(final Result result) {
         if (mContext instanceof MainActivity) {

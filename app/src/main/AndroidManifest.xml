@@ -16,8 +16,7 @@
     <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE" /> <!-- Sony -->
     <uses-permission android:name="com.sonyericsson.home.permission.BROADCAST_BADGE" /> <!-- HTC -->
     <uses-permission android:name="com.htc.launcher.permission.READ_SETTINGS" />
-    <uses-permission android:name="com.htc.launcher.permission.UPDATE_SHORTCUT" />
-    <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
+    <uses-permission android:name="com.htc.launcher.permission.UPDATE_SHORTCUT" /> <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
     <!-- <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> -->
     <!-- <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /> -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -29,6 +28,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!--
@@ -58,7 +58,8 @@
 
     <application
         android:name=".APP"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:background="@android:color/black"
         android:debuggable="false"
         android:icon="@mipmap/ic_launcher"
